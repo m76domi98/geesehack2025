@@ -74,7 +74,7 @@ A Leitner system, implemented as the pure function `next_review(box, correct, no
 - **Correct:** move up one box (box 5 stays at 5).
 - **Wrong:** go back to box 1.
 - A concept is **due** when `due_at <= now`.
-- `POST /api/courses/<id>/reviews` takes up to 5 concepts, in this order: due concepts, then concepts missed in their most recent attempt.
+- `POST /api/courses/<id>/reviews` takes up to 5 concepts that are due or were missed in their most recent attempt. Missed concepts come first, then the oldest due date.
 
 This is simple on purpose. If reviews feel badly timed, swap in SM-2 or FSRS behind the same function signature.
 
