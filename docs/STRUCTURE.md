@@ -1,6 +1,6 @@
 # Project structure
 
-Target layout after the revamp. Files marked *(legacy)* are still there from the hackathon version and will be removed.
+Layout after the revamp. The backend is done; the frontend files listed are the target.
 
 ```
 geesehack2025/
@@ -13,16 +13,16 @@ geesehack2025/
 │   └── DEVELOPMENT.md       # conventions, secrets, workflow
 │
 ├── adea-backend/            # Flask API
-│   ├── app.py               # routes and input validation only, no business logic in Gemini calls
+│   ├── app.py               # routes and input validation only
 │   ├── gemini.py            # every Gemini call: write_lesson, write_review, synthesize, answer
 │   ├── db.py                # SQLite schema, queries, next_review() spaced-repetition rule
-│   ├── test_app.py          # pytest suite (Gemini mocked)
-│   ├── test.pdf             # fixture for tests
+│   ├── test_app.py          # API route tests (Gemini mocked)
+│   ├── test_db.py           # queries and spaced-repetition rule
+│   ├── test_gemini.py       # offline checks: WAV joining, schema validation
+│   ├── test.pdf             # sample PDF for manual end-to-end runs
 │   ├── requirements.txt
 │   ├── .env.example         # copy to .env and add GEMINI_API_KEY
-│   ├── data/                # gitignored: podcastify.db, uploaded PDFs, rendered audio
-│   ├── podcastify.py        # (legacy)
-│   └── test_routes.py       # (legacy)
+│   └── data/                # gitignored: podcastify.db, uploaded PDFs, rendered audio
 │
 └── adea-frontend/           # Vue 3 + Vite SPA
     ├── index.html

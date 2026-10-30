@@ -7,7 +7,7 @@ cd adea-backend
 ```
 **No API key is needed.** Every function in `gemini.py` is monkeypatched with a fake that returns fixed data, and each test gets a fresh SQLite database in a temporary directory.
 
-### What's covered (`test_app.py`)
+### What's covered (`test_app.py`, `test_db.py`, `test_gemini.py`)
 | Area | Cases |
 |---|---|
 | Spaced repetition | `next_review` steps up through the boxes, caps at box 5, and resets to box 1 on a wrong answer |
