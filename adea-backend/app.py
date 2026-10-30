@@ -87,8 +87,7 @@ def create_app(data_dir: str | None = None, require_key: bool = True) -> Flask:
 
 
 def json_error(error: HTTPException):
-    if error.response is not None:  # already a JSON response from fail()
-        return error.response
+    # Framework errors (unknown route, 413...). fail() responses are already JSON and skip this.
     return jsonify(error=error.description), error.code
 
 
