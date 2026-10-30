@@ -7,3 +7,4 @@ adea-frontend/node_modules/
 .venv/
 CLAUDE.md
 .claude/
+.coverage
