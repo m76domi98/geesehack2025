@@ -35,7 +35,7 @@ def calls(monkeypatch):
     monkeypatch.setattr(gemini, "write_review",
                         lambda pdfs, concepts, opts: log["review"].append(concepts) or {**LESSON, "title": "Review"})
     monkeypatch.setattr(gemini, "answer", lambda pdfs, history, q: log["answer"].append((len(pdfs), q)) or "42")
-    monkeypatch.setattr(gemini, "synthesize", lambda script, voices: log["synthesize"].append(voices) or _wav())
+    monkeypatch.setattr(gemini, "synthesize", lambda script, opts: log["synthesize"].append(opts) or _wav())
     return log
 
 
@@ -65,13 +65,13 @@ def lesson(client):
 # --- course creation -----------------------------------------------------------
 
 def test_create_course_makes_lessons_in_upload_order(client):
-    res = make_course(client, length="5", depth="exam", voice_a="Charon", voice_b="Leda")
+    res = make_course(client, length="5", depth="exam", voice_a="Charon", voice_b="Leda", rot="80")
 
     course = client.get(f"/api/courses/{res.get_json()['id']}").get_json()
     assert res.status_code == 201
     assert course["title"] == "a"
     assert [d["filename"] for d in course["documents"]] == ["a.pdf", "b.pdf"]
-    assert course["options"] == {"length": 5, "depth": "exam", "voice_a": "Charon", "voice_b": "Leda"}
+    assert course["options"] == {"length": 5, "depth": "exam", "voice_a": "Charon", "voice_b": "Leda", "rot": 80}
 
 
 def test_rejects_non_pdf_even_with_pdf_extension(client):
@@ -83,6 +83,7 @@ def test_rejects_non_pdf_even_with_pdf_extension(client):
 
 @pytest.mark.parametrize("options", [
     {"length": "7"}, {"length": "ten"}, {"depth": "phd"}, {"voice_a": "Nobody"}, {"voice_a": "Puck", "voice_b": "Puck"},
+    {"rot": "101"}, {"rot": "-1"}, {"rot": "max"}, {"rot": "50.5"},
 ])
 def test_rejects_bad_options(client, options):
     assert make_course(client, **options).status_code == 400
@@ -125,7 +126,7 @@ def test_audio_needs_script_then_streams(client, calls):
     res = client.get("/api/episodes/1/audio")
 
     assert res.mimetype == "audio/wav"
-    assert calls["synthesize"] == [("Charon", "Leda")]
+    assert [(o["voice_a"], o["voice_b"]) for o in calls["synthesize"]] == [("Charon", "Leda")]
     res.close()
 
 

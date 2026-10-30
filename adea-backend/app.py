@@ -14,7 +14,7 @@ import gemini
 MAX_UPLOAD_BYTES = 20 * 1024 * 1024
 MAX_FILES = 10
 MAX_TITLE_CHARS = 120
-DEFAULT_OPTIONS = {"length": "10", "depth": "intro", "voice_a": "Puck", "voice_b": "Kore"}
+DEFAULT_OPTIONS = {"length": "10", "depth": "intro", "voice_a": "Puck", "voice_b": "Kore", "rot": "0"}
 
 # Routes live on a blueprint so tests can build a fresh app (and temp data dir) per test.
 bp = Blueprint("api", __name__, url_prefix="/api")
@@ -56,7 +56,9 @@ def parse_options(form) -> dict:
         fail(400, f"voices must be from {list(gemini.VOICES)}")
     if raw["voice_a"] == raw["voice_b"]:
         fail(400, "The two hosts need different voices")
-    return {**raw, "length": int(raw["length"])}
+    if not raw["rot"].isdigit() or int(raw["rot"]) > gemini.MAX_ROT:
+        fail(400, f"rot must be a whole number from 0 to {gemini.MAX_ROT}")
+    return {**raw, "length": int(raw["length"]), "rot": int(raw["rot"])}
 
 
 def read_pdfs(files) -> list[tuple[str, bytes]]:
@@ -176,7 +178,7 @@ def render_audio(episode_id: int):
         fail(409, "Generate the script first")
     if episode["audio_path"] is None:
         options = db.course_options(get_db(), episode["course_id"])
-        audio = call_gemini(gemini.synthesize, episode["script"], (options["voice_a"], options["voice_b"]))
+        audio = call_gemini(gemini.synthesize, episode["script"], options)
         db.set_audio(get_db(), episode_id, store_file(audio, ".wav"))
     return jsonify(ok=True)
 
