@@ -4,6 +4,45 @@ You're designing the UI for Podcastify in Figma. The backend is done; the Vue fr
 
 **Your deliverable** is a new Figma file with design tokens, components and screens (listed below), then a link to it for the user. **The user reviews it before any frontend code is written.** Don't write Vue code yourself.
 
+## Start from the reference board
+**`docs/Podcastify study-loop UI board.png`** is the user's concept board. Open it first. It's the visual direction, not a pixel spec: build it properly in Figma and improve it where you see fit. The user said to feel free to change things up.
+
+**Keep from the board:**
+- **Look:** a warm off-white background, deep green primary, and a lime accent; rounded cards; and the friendly lime **headphone mascot** in the review cards.
+- **Type:** Manrope with a 12 / 14 / 16 / 24 / 32 px scale. Radii of 8 / 12 / 20.
+- **Tokens:** as read from the board, so confirm them by eye:
+
+  | Token | Hex |
+  |---|---|
+  | `color/bg` | `#F7F6F2` |
+  | `color/text` | `#202922` |
+  | `color/primary` | `#245842` |
+  | `color/host-a` | green |
+  | `color/host-b` | purple (about `#6542B8`) |
+  | `rot/acid` | `#D8EF85` |
+  | `rot/coral` | `#F7785D` |
+
+- **Voice and copy:**
+  - "A little review goes a long way."
+  - "Study more. Scroll less."
+  - "Small steps. Big retention."
+  - "Stay focused… (ish)" in rot mode
+  - The status lines on episodes: "Audio ready · 10:00", "Script ready", "Not generated yet".
+- **Layout:**
+  - desktop has a left sidebar nav (Today, Courses, New course); mobile has a top bar with a hamburger menu
+  - Course has **Episodes / Concepts / Chat** tabs
+  - Episode has a green player card, chapter pills, a transcript, and the quiz side by side (tabs on mobile)
+  - Rot mode is dark, with a "ROT 88" badge, a 9:16 gameplay placeholder, and coral or acid Tung lines
+- **Extra sections:** the design-tokens strip, the UI components strip and the shared-states strip at the bottom. Build them as real Figma variables, components and frames.
+
+**Fix these where the board doesn't match the backend:**
+1. **Rot is a 0–100 slider**, not 4 chips, and it isn't "for later" because it's built. Show the tier labels (Normal, Casual, Brainrot, Tung Tung Tung Sahur) as marks under the slider.
+2. **Upload limit:** 1–10 PDFs, **20 MB total per course**, not "50 MB each".
+3. **Host picker:** the hosts are fixed names, **Alex** (explains) and **Sam** (curious student). The user picks a **voice** for each from: Puck, Kore, Charon, Aoede, Fenrir, Leda, Orus, Zephyr. The board labels a host "Puck", which is a voice name. Show the host name with a voice dropdown, ideally with a ▶ preview icon.
+4. **Episode states:** the "Generate" button on not-generated episodes is right. Also add the **generating** states (script takes about 1–3 min, audio about 1 min). These are slow, so they need real loading designs, not a spinner.
+5. **Tung Tung Tung Sahur avatar:** the board's cartoon log is fine as a direction. Keep it an **original drawing**, not copied fan art.
+6. **No streaks yet:** "Keep your streak going!" implies data the backend doesn't track. Use copy that doesn't promise a streak count, or mark streaks as a clearly labeled future idea.
+
 ## What the product is
 Podcastify is a **study loop**, not just a "PDF to podcast" tool:
 1. Upload course PDFs, which make a **course**.
