@@ -5,7 +5,7 @@ import uuid
 from pathlib import Path
 
 from dotenv import load_dotenv
-from flask import Blueprint, Flask, abort, current_app, g, jsonify, make_response, request
+from flask import Blueprint, Flask, abort, current_app, g, jsonify, make_response, request, send_file
 from werkzeug.exceptions import HTTPException
 
 import db
@@ -119,3 +119,72 @@ def get_course(course_id: int):
     if course is None:
         fail(404, "Course not found")
     return jsonify(course)
+
+
+# --- episodes ----------------------------------------------------------------
+
+def load_episode(episode_id: int) -> dict:
+    episode = db.get_episode(get_db(), episode_id)
+    if episode is None:
+        fail(404, "Episode not found")
+    return episode
+
+
+def public_episode(episode: dict) -> dict:
+    """Episode as the client sees it: quiz answers stay hidden until an attempt."""
+    script = episode["script"] or {}
+    return {
+        "id": episode["id"],
+        "course_id": episode["course_id"],
+        "kind": episode["kind"],
+        "position": episode["position"],
+        "title": episode["title"],
+        "chapters": script.get("chapters", []),
+        "questions": [
+            {key: q[key] for key in ("id", "concept", "question", "choices")} for q in episode["questions"]
+        ],
+        "has_script": episode["script"] is not None,
+        "has_audio": episode["audio_path"] is not None,
+    }
+
+
+@bp.get("/episodes/<int:episode_id>")
+def get_episode(episode_id: int):
+    return jsonify(public_episode(load_episode(episode_id)))
+
+
+@bp.post("/episodes/<int:episode_id>/script")
+def write_script(episode_id: int):
+    episode = load_episode(episode_id)
+    if episode["script"] is None:
+        # ponytail: two simultaneous requests could both generate; add a lock if that ever happens
+        conn = get_db()
+        lesson = call_gemini(
+            gemini.write_lesson,
+            Path(db.document_path(conn, episode["document_id"])).read_bytes(),
+            db.prior_concepts(conn, episode["course_id"], episode["position"]),
+            db.course_options(conn, episode["course_id"]),
+        )
+        db.save_lesson(conn, episode_id, lesson)
+        episode = load_episode(episode_id)
+    return jsonify(public_episode(episode))
+
+
+@bp.post("/episodes/<int:episode_id>/audio")
+def render_audio(episode_id: int):
+    episode = load_episode(episode_id)
+    if episode["script"] is None:
+        fail(409, "Generate the script first")
+    if episode["audio_path"] is None:
+        options = db.course_options(get_db(), episode["course_id"])
+        audio = call_gemini(gemini.synthesize, episode["script"], (options["voice_a"], options["voice_b"]))
+        db.set_audio(get_db(), episode_id, store_file(audio, ".wav"))
+    return jsonify(ok=True)
+
+
+@bp.get("/episodes/<int:episode_id>/audio")
+def stream_audio(episode_id: int):
+    episode = load_episode(episode_id)
+    if episode["audio_path"] is None:
+        fail(404, "Audio not rendered yet")
+    return send_file(episode["audio_path"], mimetype="audio/wav", conditional=True)

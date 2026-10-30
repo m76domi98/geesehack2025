@@ -167,6 +167,10 @@ def course_options(conn: sqlite3.Connection, course_id: int) -> dict:
     return json.loads(row["options_json"])
 
 
+def document_path(conn: sqlite3.Connection, document_id: int) -> str:
+    return conn.execute("SELECT path FROM documents WHERE id = ?", (document_id,)).fetchone()["path"]
+
+
 def document_paths(conn: sqlite3.Connection, course_id: int) -> list[str]:
     rows = conn.execute(
         "SELECT path FROM documents WHERE course_id = ? ORDER BY position", (course_id,)
