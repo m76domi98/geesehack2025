@@ -10,6 +10,7 @@ Upload your lecture notes or readings and Podcastify makes a series of two-host 
 - **Course mode:** several PDFs make an ordered series of lessons, and later lessons refer back to earlier ones.
 - **Two-host dialogue:** the material is explained in conversation, not read aloud.
 - **Options:** length (5 / 10 / 15 min), depth (intro or exam review), and host voices.
+- **Rot factor:** a 0–100 brainrot slider. At 75+, Tung Tung Tung Sahur becomes your co-host and gameplay footage plays in the background. The facts stay correct.
 - **Player:** chapters, 1x to 2x speed, and a transcript that follows along.
 - **Concept-tagged quizzes:** every question is linked to a concept from the episode.
 - **Spaced repetition:** missed or due concepts come back as review episodes with fresh questions.

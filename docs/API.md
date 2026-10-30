@@ -22,6 +22,7 @@ Multipart form:
 | `length` | `5` \| `10` \| `15` | minutes per lesson |
 | `depth` | `intro` \| `exam` | |
 | `voice_a`, `voice_b` | Gemini voice name | must be on the allowlist and different from each other |
+| `rot` | `0`–`100` | brainrot level, default `0`. 75+ makes Tung Tung Tung Sahur the second host |
 
 → `201 {"id": 1}`
 

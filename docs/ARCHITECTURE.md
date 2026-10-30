@@ -78,6 +78,9 @@ A Leitner system, implemented as the pure function `next_review(box, correct, no
 
 This is simple on purpose. If reviews feel badly timed, swap in SM-2 or FSRS behind the same function signature.
 
+## Rot factor
+`options.rot` (0–100) only changes the *delivery*. `gemini.rot_tier(rot)` picks one of four style tiers that get added to the prompt. At 75+, `gemini.hosts_for(rot)` makes the second host "Tung Tung Tung Sahur", with his own TTS style. The prompt always requires accurate facts and plain-language quiz questions, because quiz results drive spaced repetition. The frontend shows a muted, looping YouTube gameplay embed behind the player at 75+.
+
 ## Generation is lazy
 Creating a course only stores PDFs and placeholder episodes. Scripts are generated when an episode is opened, and audio is rendered as a separate request. That keeps costs proportional to what you actually study, and it lets the UI show the script while the audio renders.
 
