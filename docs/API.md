@@ -45,7 +45,7 @@ Generates the lesson script (with its concepts and quiz) if it doesn't exist yet
 → the same body as `GET`.
 
 ### `GET /api/episodes/<id>`
-→ `{"id", "course_id", "kind", "title", "chapters": [...], "questions": [{"id", "concept", "question", "choices"}], "has_audio"}`
+→ `{"id", "course_id", "kind", "position", "title", "chapters": [...], "questions": [{"id", "concept", "question", "choices"}], "has_script", "has_audio"}`
 Answers aren't included; they're only revealed by an attempt.
 
 ### `POST /api/episodes/<id>/audio`
