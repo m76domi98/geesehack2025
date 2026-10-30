@@ -191,3 +191,38 @@ def test_chat_uses_all_course_pdfs(client, calls, lesson):
 ])
 def test_chat_rejects_bad_input(client, lesson, body):
     assert client.post(f"/api/courses/{lesson['course_id']}/chat", json=body).status_code == 400
+
+
+# --- framework errors + startup ---------------------------------------------------------
+
+def test_missing_key_fails_fast(tmp_path, monkeypatch):
+    monkeypatch.setattr(app_module, "load_dotenv", lambda: None)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+
+    with pytest.raises(RuntimeError, match="GEMINI_API_KEY"):
+        app_module.create_app(str(tmp_path))
+
+
+def test_oversized_upload_returns_json_413(client):
+    big = io.BytesIO(b"%PDF" + b"0" * app_module.MAX_UPLOAD_BYTES)
+
+    res = client.post("/api/courses", data={"files": (big, "big.pdf")}, content_type="multipart/form-data")
+
+    assert res.status_code == 413
+    assert "error" in res.get_json()
+
+
+def test_unknown_route_returns_json_404(client):
+    res = client.get("/api/nope")
+
+    assert res.status_code == 404
+    assert "error" in res.get_json()
+
+
+def test_audio_before_render_is_404(client, lesson):
+    assert client.get("/api/episodes/1/audio").status_code == 404
+
+
+def test_review_and_chat_on_unknown_course_are_404(client):
+    assert client.post("/api/courses/99/reviews").status_code == 404
+    assert client.post("/api/courses/99/chat", json={"question": "hi"}).status_code == 404
