@@ -27,6 +27,7 @@ Small focused files, descriptive names, and no dead code or commented-out blocks
 - Branch from `main`. The current work is on `revamp`.
 - Use conventional commits: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`.
 - Before opening a PR, `pytest` passes and `npm run build` succeeds.
+- Add a `CHANGELOG.md` entry under **Unreleased** for every user-facing or API change.
 
 ## Design
 The UI is designed in Figma first. Tokens (colors, type and spacing) are copied into `src/styles.css` as CSS custom properties. Change the design in Figma, then update the tokens; don't add one-off colors in components.

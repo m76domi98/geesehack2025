@@ -53,3 +53,4 @@ npm run dev                   # http://localhost:5173 (proxies /api to :5000)
 - [Project structure](docs/STRUCTURE.md): where things live
 - [Testing](docs/TESTING.md): how to run and write tests
 - [Development](docs/DEVELOPMENT.md): conventions, secrets and workflow
+- [Changelog](CHANGELOG.md): what changed
