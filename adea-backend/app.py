@@ -188,3 +188,68 @@ def stream_audio(episode_id: int):
     if episode["audio_path"] is None:
         fail(404, "Audio not rendered yet")
     return send_file(episode["audio_path"], mimetype="audio/wav", conditional=True)
+
+
+# --- quiz, reviews, chat -------------------------------------------------------
+
+MAX_QUESTION_CHARS = 2000
+MAX_HISTORY_TURNS = 20
+
+
+def course_pdfs(course_id: int) -> list[bytes]:
+    return [Path(path).read_bytes() for path in db.document_paths(get_db(), course_id)]
+
+
+def require_course(course_id: int) -> None:
+    if db.get_course(get_db(), course_id, db.now_utc()) is None:
+        fail(404, "Course not found")
+
+
+@bp.post("/questions/<int:question_id>/attempt")
+def attempt(question_id: int):
+    question = db.get_question(get_db(), question_id)
+    if question is None:
+        fail(404, "Question not found")
+    choice = (request.get_json(silent=True) or {}).get("choice")
+    if type(choice) is not int or not 0 <= choice < len(question["choices"]):
+        fail(400, "choice must be the index of one of the options")
+    correct = choice == question["answer_index"]
+    db.record_attempt(get_db(), question_id, correct, db.now_utc())
+    return jsonify(correct=correct, answer_index=question["answer_index"], explanation=question["explanation"])
+
+
+@bp.post("/courses/<int:course_id>/reviews")
+def create_review(course_id: int):
+    require_course(course_id)
+    concepts = db.review_concepts(get_db(), course_id, db.now_utc())
+    if not concepts:
+        fail(409, "Nothing to review right now")
+    # Generate before creating the episode so a Gemini failure leaves no empty episode behind.
+    lesson = call_gemini(
+        gemini.write_review, course_pdfs(course_id), concepts, db.course_options(get_db(), course_id)
+    )
+    episode_id = db.create_review_episode(get_db(), course_id)
+    db.save_lesson(get_db(), episode_id, lesson)
+    return jsonify(episode_id=episode_id), 201
+
+
+def parse_history(raw) -> list[dict]:
+    if not isinstance(raw, list) or len(raw) > MAX_HISTORY_TURNS:
+        fail(400, f"history must be a list of at most {MAX_HISTORY_TURNS} turns")
+    for turn in raw:
+        if not (isinstance(turn, dict) and turn.get("role") in ("user", "model")
+                and isinstance(turn.get("text"), str) and len(turn["text"]) <= MAX_QUESTION_CHARS):
+            fail(400, "each history turn needs role 'user' or 'model' and text")
+    return [{"role": turn["role"], "text": turn["text"]} for turn in raw]
+
+
+@bp.post("/courses/<int:course_id>/chat")
+def chat(course_id: int):
+    require_course(course_id)
+    body = request.get_json(silent=True) or {}
+    question = body.get("question")
+    if not isinstance(question, str) or not question.strip() or len(question) > MAX_QUESTION_CHARS:
+        fail(400, f"question must be 1-{MAX_QUESTION_CHARS} characters")
+    history = parse_history(body.get("history", []))
+    reply = call_gemini(gemini.answer, course_pdfs(course_id), history, question.strip())
+    return jsonify(answer=reply)
