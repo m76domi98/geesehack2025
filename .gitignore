@@ -1,2 +1,10 @@
+.DS_Store
+__pycache__/
+.pytest_cache/
+.env
+adea-backend/data/
 adea-frontend/node_modules/
-adea-frontend/package-lock.json
+.venv/
+CLAUDE.md
+.claude/
+.coverage
