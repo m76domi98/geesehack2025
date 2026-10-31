@@ -32,5 +32,10 @@ Small focused files, descriptive names, and no dead code or commented-out blocks
 ## Design
 The UI is designed in Figma first. Tokens (colors, type and spacing) are copied into `src/styles.css` as CSS custom properties. Change the design in Figma, then update the tokens; don't add one-off colors in components.
 
+Figma file: [Podcastify: Study Loop UI](https://www.figma.com/design/NCP46BjTST3o0qdUnti1K3)
+- **Foundations:** the design-tokens board. The variables are in collections `Color` (Light/Dark), `Rot`, and `Dimension` (`space/*`, `radius/*`, `font-size/*`). Each variable's web code syntax is its CSS name, so `color/bg` becomes `var(--color-bg)`.
+- **Components:** one component set per Vue component, with variants. Each component's description has its behavior and API notes.
+- **Screens:** desktop (1440) and mobile (390) frames, named after views (`Today`, `NewCourse`, `Course`, `Episode`, `Episode / Rot mode`, plus state frames such as `Episode / Writing script`).
+
 ## Changing Gemini models
 Model IDs are constants at the top of `gemini.py`. Check the [current model list](https://ai.google.dev/gemini-api/docs/models) before changing them. Run the end-to-end checklist in [TESTING.md](TESTING.md) afterwards, because prompt behavior differs between models.
