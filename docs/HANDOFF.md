@@ -1,156 +1,160 @@
-# Handoff: Figma design for Podcastify
+# Handoff: build the Vue frontend from the Figma design
 
-You're designing the UI for Podcastify in Figma. The backend is done; the Vue frontend is built **from your Figma file** afterwards, so the design has to map cleanly to components. Read this whole file first, and skim `README.md`, `docs/ARCHITECTURE.md` and `docs/API.md` for context.
+Your job is to build the Podcastify frontend (phase 3), using the approved Figma design and the finished backend. Read this whole file first. Then skim `README.md`, `docs/ARCHITECTURE.md` and `docs/API.md`. The API doc is the contract for every request you make.
 
-**Your deliverable** is a new Figma file with design tokens, components and screens (listed below), then a link to it for the user. **The user reviews it before any frontend code is written.** Don't write Vue code yourself.
+## Where things stand
+- **Backend:** done and tested (`adea-backend/`, about 41 pytest tests, Gemini mocked). Don't change the backend or the API. If something in the API seems wrong, write it down and ask.
+- **Design:** done and approved, in Figma (link below).
+- **Frontend:** still the hackathon leftovers. You're replacing it.
 
-## Start from the reference board
-**`docs/Podcastify study-loop UI board.png`** is the user's concept board. Open it first. It's the visual direction, not a pixel spec: build it properly in Figma and improve it where you see fit. The user said to feel free to change things up.
+## The Figma file
+**https://www.figma.com/design/NCP46BjTST3o0qdUnti1K3** (file key `NCP46BjTST3o0qdUnti1K3`)
 
-**Keep from the board:**
-- **Look:** a warm off-white background, deep green primary, and a lime accent; rounded cards; and the friendly lime **headphone mascot** in the review cards.
-- **Type:** Manrope with a 12 / 14 / 16 / 24 / 32 px scale. Radii of 8 / 12 / 20.
-- **Tokens:** as read from the board, so confirm them by eye:
+Call `create_session` with that key, then read frames with `get_design_context` and `get_screenshot`, and tokens with `get_variable_defs`. Load the `/figma-design-to-code` skill (resource `skill://figma/figma-design-to-code/SKILL.md`) before calling `get_design_context`. Its output is a reference to adapt to plain Vue and CSS, not code to paste.
 
-  | Token | Hex |
-  |---|---|
-  | `color/bg` | `#F7F6F2` |
-  | `color/text` | `#202922` |
-  | `color/primary` | `#245842` |
-  | `color/host-a` | green |
-  | `color/host-b` | purple (about `#6542B8`) |
-  | `rot/acid` | `#D8EF85` |
-  | `rot/coral` | `#F7785D` |
+The file has three pages:
 
-- **Voice and copy:**
-  - "A little review goes a long way."
-  - "Study more. Scroll less."
-  - "Small steps. Big retention."
-  - "Stay focused… (ish)" in rot mode
-  - The status lines on episodes: "Audio ready · 10:00", "Script ready", "Not generated yet".
-- **Layout:**
-  - desktop has a left sidebar nav (Today, Courses, New course); mobile has a top bar with a hamburger menu
-  - Course has **Episodes / Concepts / Chat** tabs
-  - Episode has a green player card, chapter pills, a transcript, and the quiz side by side (tabs on mobile)
-  - Rot mode is dark, with a "ROT 88" badge, a 9:16 gameplay placeholder, and coral or acid Tung lines
-- **Extra sections:** the design-tokens strip, the UI components strip and the shared-states strip at the bottom. Build them as real Figma variables, components and frames.
+| Page | What's on it |
+|---|---|
+| **Foundations** (`0:1`) | The design-tokens board: colors in light and dark, rot accents, contrast notes, type scale, spacing and radii |
+| **Components** (`2:64`) | One component set per Vue component, with variants. **Read each component's description**; it holds behavior, accessibility and API notes. |
+| **Screens** (`2:65`) | Desktop (1440) and mobile (390) frames, in rows 1–6 |
 
-**Fix these where the board doesn't match the backend:**
-1. **Rot is a 0–100 slider**, not 4 chips, and it isn't "for later" because it's built. Show the tier labels (Normal, Casual, Brainrot, Tung Tung Tung Sahur) as marks under the slider.
-2. **Upload limit:** 1–10 PDFs, **20 MB total per course**, not "50 MB each".
-3. **Host picker:** the hosts are fixed names, **Alex** (explains) and **Sam** (curious student). The user picks a **voice** for each from: Puck, Kore, Charon, Aoede, Fenrir, Leda, Orus, Zephyr. The board labels a host "Puck", which is a voice name. Show the host name with a voice dropdown, ideally with a ▶ preview icon.
-4. **Episode states:** the "Generate" button on not-generated episodes is right. Also add the **generating** states (script takes about 1–3 min, audio about 1 min). These are slow, so they need real loading designs, not a spinner.
-5. **Tung Tung Tung Sahur avatar:** the board's cartoon log is fine as a direction. Keep it an **original drawing**, not copied fan art.
-6. **No streaks yet:** "Keep your streak going!" implies data the backend doesn't track. Use copy that doesn't promise a streak count, or mark streaks as a clearly labeled future idea.
+### Tokens → `src/styles.css`
+The variables are in three collections:
+- `Color`, with Light and Dark modes
+- `Rot`, the rot-mode palette
+- `Dimension`: `space/*`, `radius/*`, `font-size/*`
 
-## What the product is
-Podcastify is a **study loop**, not just a "PDF to podcast" tool:
-1. Upload course PDFs, which make a **course**.
-2. Each PDF becomes a **lesson episode**: two hosts explain it in conversation, with chapters.
-3. Each episode ends with a **quiz**, and every question is tagged with a **concept**.
-4. Wrong answers and due concepts come back as short **review episodes**, on a spaced-repetition schedule (Leitner boxes 1–5).
-5. You can **chat** with your course PDFs.
+Each variable's web code syntax is already its CSS name. So `color/bg` becomes `--color-bg`, and `space/4` becomes `--space-4` (16px; the scale is a 4px base). Put them all at the top of `src/styles.css` as custom properties:
+- the Light values in `:root`
+- the Dark values in `[data-theme="dark"]`
+- the rot palette in `.rot` or `:root`, whichever you find cleaner
 
-**Rot factor (0–100 slider):** brainrot delivery mode. At 75+, the co-host becomes **Tung Tung Tung Sahur** (the meme character), and a muted, looping gameplay video plays behind the player. This is a fun, signature feature, so make rot mode feel deliberately chaotic while normal mode stays calm and focused.
+**Font:** Manrope from Google Fonts, weights 400, 500, 600, 700 and 800. The text styles are:
 
-**Audience:** students. **Tone:** friendly, focused and a bit playful. Don't make it a generic SaaS dashboard.
+| Style | Size / line height | Weight |
+|---|---|---|
+| Display | 32/40 | 800 |
+| Heading | 24/32 | 700 |
+| Title | 16/24 | 700 |
+| Body L | 16/24 | 400 |
+| Body | 14/20 | 400 |
+| Label | 14/20 | 600 |
+| Caption | 12/16 | 500 |
 
-## Screens (desktop 1440 wide, plus a mobile 390 wide for each)
-Name frames exactly like this; the names map to Vue views and components.
+### Components → Vue
+| Figma component (node) | Vue file | Notes |
+|---|---|---|
+| `Button` (`5:62`) | `components/BaseButton.vue` | variants primary, secondary, accent, ghost, danger; optional leading icon; minimum height 44 |
+| `Pill` (`5:75`) | `components/StatusPill.vue` | tones Due, Neutral, Success, Primary, Accent, Rot |
+| `Tab` (`5:101`), `SegmentOption` (`5:110`) | `components/TabBar.vue`, `components/SegmentedControl.vue` | use real `role="tablist"` and `role="radiogroup"` |
+| `NavItem` (`5:123`), `Sidebar` (`14:561`), `TopBar` (`14:599`) | `components/AppShell.vue` | sidebar on desktop; top bar plus menu sheet on mobile |
+| `TextField` (`5:147`) | `components/TextField.vue` | |
+| `Toast` (`5:176`) | `components/ToastHost.vue` plus a small toast store | |
+| `CourseCard` (`6:93`) | `components/CourseCard.vue` | Card layout on desktop, Row layout on mobile |
+| `ReviewCard` (`6:142`) | `components/ReviewCard.vue` | |
+| `EpisodeRow` (`6:241`) | `components/EpisodeRow.vue` | 6 states (see below) |
+| `ConceptRow` (`6:302`), `ConceptMastery` (`14:467`) | `components/ConceptMastery.vue` | |
+| `PodcastPlayer` (`9:360`) | `components/PodcastPlayer.vue` | Normal and Rot modes; desktop and mobile layouts |
+| `TranscriptLine` (`9:385`), `Transcript` (`20:2692`) | `components/TranscriptView.vue` | Alex, Sam and Tung lines, plus the active line |
+| `QuizChoice` (`11:257`), `Quiz` (`11:425`) | `components/EpisodeQuiz.vue` | states Unanswered, Correct, Incorrect, Score |
+| `GeneratingPanel` (`12:416`) | `components/GeneratingPanel.vue` | steps Writing script and Recording audio; desktop and mobile |
+| `Dropzone` (`12:439`), `FileRow` (`12:497`), `VoicePicker` (`13:455`), `RotSlider` (`13:580`), `UploadForm` (`15:1250`) | `components/UploadForm.vue` plus the small parts | |
+| `ChatMessage` (`14:432`), `CourseChat` (`14:433`) | `components/CourseChat.vue` | |
+| `Skeleton` (`14:560`) | `components/SkeletonBlock.vue` | |
+| `Mascot` (`4:125`), `TungAvatar` (`4:141`) | `src/assets/*.svg` | export as SVG; both are original drawings |
+| `GameplayPlaceholder` (`4:142`) | part of the rot player | stand-in for the YouTube embed (see rot mode below) |
+| `Icons` (`4:2`) | inline SVG components or `assets/icons/*.svg` | 24px, 2px stroke; use `currentColor` |
 
-### 1. `Today` (route `/`)
-- **Review card** (the hero element): "4 concepts due · ~4 min" plus a **Start review** button. One card per course with `due_count > 0`.
-- **Course library:** cards showing the title, a progress bar (`episodes_done / episodes_total`) and a due badge.
-- **New course** button.
-- Empty state: no courses yet, with an upload CTA.
+Vue component names must be multi-word (eslint `vue/multi-word-component-names`), which is why some file names differ from the Figma names. Keep the Figma name in a comment at the top of each file.
 
-### 2. `NewCourse` (route `/new`)
-- **Multi-PDF dropzone** (1–10 files). The file list can be **reordered**, since order equals lesson order, and files can be removed.
-- An optional course title.
-- Options:
-  - **Length:** 5 / 10 / 15 min (segmented control)
-  - **Depth:** "Intro" or "Exam review"
-  - **Voices:** a picker for each host
-  - **Rot factor:** a 0–100 slider with tier labels:
-    - 0–24: Normal
-    - 25–49: Casual
-    - 50–74: Brainrot
-    - 75–100: Tung Tung Tung Sahur
-    - The slider should visibly escalate as it goes up.
-- **Create course** button.
-- States: invalid file ("x.pdf is not a PDF"), too many files, uploading.
+### Screens → routes
+| Route | View | Figma frames |
+|---|---|---|
+| `/` | `views/TodayView.vue` | `Today`, `Today / Mobile`, `Today / Empty`, `Today / Empty / Mobile`, `Today / Loading` |
+| `/new` | `views/NewCourseView.vue` | `NewCourse`, `/ Invalid file`, `/ Too many files`, `/ Uploading`, `/ Mobile` |
+| `/courses/:id` | `views/CourseView.vue` | `Course`, plus `Course / Episodes`, `/ Concepts` and `/ Chat / Mobile` |
+| `/episodes/:id` | `views/EpisodeView.vue` | `Episode`, `/ Writing script`, `/ Recording audio`, `/ Mobile`, `/ Quiz / Mobile`, `/ Writing script / Mobile`, `Episode / Rot mode` (+ mobile) |
+| `*` | `views/NotFoundView.vue` | `NotFound`, `NotFound / Mobile` |
 
-### 3. `Course` (route `/courses/:id`)
-- **Episode list:** lessons and reviews, each in one of these states:
-  - not generated
-  - script ready
-  - audio ready
-  - done (quiz finished)
-- **Concept mastery:** each concept with its box level (1–5) and when it's next due.
-- **Chat panel:** messages plus an input box.
-- The review card again, if anything is due.
+The `Shared states` frame shows the toasts, the inline error banner, validation messages and skeletons.
 
-### 4. `Episode` (route `/episodes/:id`)
-- **Player:** play/pause, seek, current time and duration, **speed** (1, 1.25, 1.5, 2x), and a **chapter list** you can jump through.
-- **Transcript:** lines color-coded by host, the **current line highlighted**, and auto-scroll.
-- **Quiz:** one question at a time, 4 choices, then correct/incorrect feedback with the explanation, then a final score that links to review if anything was missed.
-- **Generating states**, which are slow, so make them feel alive:
-  - "Writing script…" takes **about 1–3 minutes**
-  - "Recording audio…" takes about 1 minute
-  - Showing the script while the audio records is fine.
+## Behavior the frames don't show
+- **The backend gives no progress signal for generation.** `POST /episodes/:id/script` takes about 1–3 minutes and `/audio` about 1 minute, and each holds the request open until it's done. So the generating UI is driven by the client:
+  - an elapsed timer
+  - an indeterminate shimmer (no fake percentages)
+  - tips that rotate every ~8 seconds
+  - `aria-live="polite"` announcements
+  - respect for `prefers-reduced-motion`
 
-### 5. `Episode / Rot mode` (rot ≥ 75)
-- The same layout, with a **muted, looping 9:16 gameplay video** behind or beside the player (a YouTube embed, so design a frame for it and use a **placeholder**, not real game footage).
-- Tung Tung Tung Sahur's transcript lines get their own loud style.
-- Use an original placeholder for his avatar. **Don't copy fan art or game screenshots into the file.**
+  Use the copy "keep this tab open". Don't promise that the user can leave.
+- **Episode states** come from `has_script` and `has_audio`, plus whether a request is in flight and whether the quiz is finished:
+  - Not generated
+  - Writing script
+  - Script ready
+  - Recording audio
+  - Audio ready
+  - Done
 
-### 6. Shared states
-Error toast or banner (for example "The AI service failed. Please try again."), loading skeletons and 404.
+  The API doesn't store quiz completion, so for now track "Done" on the client per episode (for example in `localStorage`), or leave it out and ask.
+- **Course progress:** `GET /api/courses` returns `episodes_done` and `episodes_total`. Use those for the CourseCard progress bar.
+- **Review:** `POST /courses/:id/reviews` returns `{episode_id}`; route to that episode. If it returns 409, nothing is due, so show the green "Nothing is due" message, not an error.
+- **Quiz:** choosing an answer immediately calls `POST /questions/:id/attempt`. The response is `{correct, answer_index, explanation}`. Show Correct or Incorrect with an icon and words, never color alone.
+- **Upload:** check everything on the client before submitting:
+  - 1–10 PDFs
+  - each file is a PDF (by type and extension; the server also checks the `%PDF` bytes)
+  - 20 MB total
+  - `voice_a` and `voice_b` are different
 
-## Real data shapes (use realistic content, not lorem ipsum)
-From `GET /api/courses/:id`:
-```json
-{"id": 1, "title": "BIOL 101", "options": {"length": 10, "depth": "intro", "voice_a": "Puck", "voice_b": "Kore", "rot": 0},
- "episodes": [{"id": 1, "kind": "lesson", "position": 1, "title": "How Life Began", "has_script": true, "has_audio": true},
-              {"id": 3, "kind": "review", "position": 3, "title": "Review", "has_script": true, "has_audio": false}],
- "concepts": [{"id": 1, "name": "Abiogenesis", "box": 2, "due_at": "2026-11-02T10:00:00Z"}], "due_count": 1}
-```
-Here's a real generated transcript line, to give a sense of tone and length:
-> **Sam:** I thought my screen failed to load. Are you telling me that an entire introductory lesson comes down to an exclamation you make when finding twenty dollars in an old coat?
+  Show server 400 and 413 messages in the same inline spots.
+- **Voices:** Puck, Kore, Charon, Aoede, Fenrir, Leda, Orus, Zephyr. The ▶ preview has no backend support, so either leave it as a disabled button labelled "Preview coming soon" or ask.
+- **Rot mode:** when the course's `options.rot` is 75 or higher:
+  - wrap the episode page in `data-theme="dark"` and use the rot palette
+  - the Tung avatar replaces Sam's
+  - a **muted, looping** gameplay video sits next to the player (a YouTube embed with `mute=1&loop=1&playlist=<id>`, and a "Hide gameplay" toggle). Ask the user for the video ID; until then use the placeholder.
+- **Chat:** keep the history on the client and send `{history, question}`. Show the typing dots while the request is pending.
+- **Desktop Course has no tabs.** That was a deliberate design choice: the episodes list sits next to Concept mastery and Chat. Only mobile uses the Episodes / Concepts / Chat tabs.
 
-The hosts are **Alex** (leads and explains) and **Sam** (the curious student). At rot ≥ 75, Sam is replaced by **Tung Tung Tung Sahur**. Quiz questions have 4 choices; lessons have about 5 questions and 3–5 chapters.
+## Known quirks in the Figma file
+- A component's text property shows the **same default text in every variant**, for example every Toast variant says "The AI service failed…". Use the screens for real copy, not the component defaults.
+- The positions of the RotSlider and seek-bar handles are approximate at non-default widths. Use a native `<input type="range">` styled with CSS.
+- The CourseCard progress bar in the screens may not match the percentage exactly. Compute it from the data.
 
-## Design system requirements
-- Define **Figma variables**:
-  - colors (light mode required; dark mode is a nice-to-have)
-  - a type scale
-  - spacing (a 4px base)
-  - radii
-  - a **rot accent** set
-  These become CSS custom properties in `adea-frontend/src/styles.css`, so name them like CSS vars (`color/bg`, `color/host-a`, `space/4`…).
-- **Build components with variants** that map 1:1 to the planned Vue components:
-  - `UploadForm`, `CourseCard`, `ReviewCard`, `ConceptMastery`
-  - `PodcastPlayer`, `Transcript`/`TranscriptLine` (host A, host B, Tung Sahur, active)
-  - `Quiz` (unanswered, correct, incorrect, score)
-  - `CourseChat`, `Button`, `Toast`
-- The frontend is plain CSS with no UI library, so keep it buildable without heavy custom graphics. Native `<audio>` is controlled by a custom UI.
+## The current frontend (cleanup first)
+These are fixes, not design work:
+- `src/router/index.js` imports `views/Feedback.vue` and `components/Chatbot.vue`, which don't exist, **so the build is currently broken**.
+- The old views (`Home`, `Upload`, `Output`) and components (`FileUpload`, `AudioPlayer`) call the removed `/upload` route. Delete them and replace them with the new views.
+- `vite.config.js` has **no `/api` proxy** yet, although the docs say it does. Add `server.proxy['/api'] = 'http://localhost:5000'`.
+- The styles live at `src/assets/styles.css`. The docs say `src/styles.css`, so move them there and update the import in `main.js`.
+- `vuetify` and `axios` are in `package.json`, but the plan is plain CSS and `fetch`. Remove them unless you find a real need. Keep `pinia` and `@vueuse/core` only if you use them.
+
+## Rules
+- Plain CSS with the token custom properties only, so no one-off hex values in components. `<script setup>` everywhere.
+- **No secrets in the frontend.** Anything in the Vite bundle is public; the Gemini key stays in `adea-backend/.env`.
+- Put every API call in one small `src/api.js`, which uses `fetch`, parses `{error}` bodies and throws readable errors.
 - **Accessibility:**
-  - WCAG AA contrast, including the host colors on the transcript background
-  - visible focus states on every component
-  - minimum 44px touch targets
-  - don't rely on color alone for correct/incorrect; add icons or text
-- Use one font from Google Fonts. The old app used Poppins; you can change it.
+  - WCAG AA (the token pairs are already checked; see the Foundations board)
+  - a visible `:focus-visible` ring (3px `--color-focus`)
+  - touch targets of 44px or more
+  - real buttons, links and labels
+  - `aria-current` for the active nav item and the active transcript line
+- Write tests with Vitest and `@vue/test-utils`: at minimum `api.js` error handling, upload validation, and the quiz state machine. Mock `fetch`.
 
-## How to work (Figma MCP)
-1. Load the Figma skills first: `/figma-use` (required before `use_figma`) and `/figma-generate-design`.
-2. `create_new_file` → `create_session` with that file key → `search_design_system` to check for anything reusable.
-3. Build in this order: **variables, then components, then screens**. Desktop first, then mobile.
-4. Give the user a link and a short summary of your design decisions. Iterate on their feedback.
+## Workflow
+1. Do the cleanup above, and get `npm run build` passing on an empty shell.
+2. Add the tokens and base styles, then the app shell (Sidebar and TopBar).
+3. Build the components in dependency order, comparing each with its Figma component.
+4. Build the views in order: Today, NewCourse, Course, Episode, rot mode, and the shared states.
+5. Run it against the real backend:
+   - `cd adea-backend && .venv/Scripts/python -m flask --app app run --debug`
+   - `cd adea-frontend && npm run dev`
+
+   Check every frame at 1440 and 390 widths.
+6. Make small, logical commits with conventional messages on a branch off `main`. When you're done, update `docs/STRUCTURE.md` and `CHANGELOG.md`, then open a PR.
 
 ## Out of scope
-- Writing frontend code, or changing the backend or API.
-- Real Subway Surfers footage or screenshots, and copied Tung Sahur artwork. Use labeled placeholders.
-- Accounts or login. The app is single-user.
-
-## When you're done
-Update the "Design" section of `docs/DEVELOPMENT.md` with the Figma file link. The frontend session will use `get_design_context` and `get_variable_defs` on your frames, so keep frame and component names exactly as listed above.
+- Changing the backend or API.
+- Accounts or login (the app is single-user).
+- Streaks (not tracked).
+- Real gameplay footage, or copied Tung Tung Tung Sahur art.
